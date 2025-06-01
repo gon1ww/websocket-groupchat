@@ -1,53 +1,269 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-    <title>Spring Boot WebSocket Chat Application</title>
-    <link rel="stylesheet" href="/css/main.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket 聊天室</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        #usernamePage {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Space between elements */
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #usernamePage h2 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        #usernamePage input[type="text"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 25px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #usernamePage input[type="text"]:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        #usernamePage button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #usernamePage button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .chat-container {
+            display: flex;
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .online-users-list {
+            flex: 0 0 250px;
+            background-color: #e9ecef;
+            padding: 15px 0;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+        }
+        .online-users-list .list-group-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            cursor: pointer;
+            border: none;
+            border-radius: 0;
+            position: relative;
+        }
+        .online-users-list .list-group-item:hover {
+            background-color: #e2e6ea;
+        }
+        .online-users-list .list-group-item.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .online-users-list .list-group-item img {
+            margin-right: 10px;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #fff;
+        }
+        .online-users-list .list-group-item span {
+            flex-grow: 1;
+        }
+        .notification-badge {
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            padding: 4px 8px;
+            font-size: 0.75em;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #chatWindowsContainer {
+            flex: 1;
+            position: relative;
+        }
+        .chat-window {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: none;
+            border-radius: 0;
+            background-color: #fff;
+        }
+        .chat-window-header {
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            padding: 15px;
+            min-height: 60px;
+        }
+        .chat-window-header .chat-avatar-header {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        .messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #e5ddd5; /* WhatsApp-like background */
+        }
+        .message-input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #dee2e6;
+            background-color: #f8f9fa;
+        }
+        .message-input-area .form-control {
+            flex: 1;
+            border-radius: 20px;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+        }
+        .message-input-area .btn {
+            border-radius: 20px;
+            padding: 10px 20px;
+            margin-left: 10px;
+        }
+        .message-box {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .message-box.my-message {
+            justify-content: flex-end;
+        }
+        .message-box.other-message {
+            justify-content: flex-start;
+        }
+        .chat-avatar {
+            width: 30px;
+            height: 30px;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .message-box.my-message .chat-avatar {
+            order: 2; /* Avatar after message content for my messages */
+            margin-right: 0;
+            margin-left: 10px;
+        }
+        .message-content {
+            background-color: #f1f1f1;
+            padding: 8px 12px;
+            border-radius: 15px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+        .message-box.my-message .message-content {
+            background-color: #dcf8c6; /* Green for my messages */
+        }
+        .private-chat-username {
+            flex-grow: 1;
+            text-align: center;
+        }
+        .close-private-chat {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+    </style>
 </head>
 <body>
-<noscript>
-    <h2>Sorry! Your browser doesn't support Javascript</h2>
-</noscript>
-
-<div id="username-page">
-    <div class="username-page-container">
-        <h1 class="title">Type your username</h1>
-        <form id="usernameForm" name="usernameForm">
-            <div class="form-group">
-                <input type="text" id="name" placeholder="Username" autocomplete="off" class="form-control" />
-            </div>
-            <div class="form-group">
-                <button type="submit" class="accent username-submit">Start Chatting</button>
-            </div>
-        </form>
-    </div>
+<div id="usernamePage" class="username-input">
+    <h2>请输入你的用户名</h2>
+    <input type="text" id="usernameInput" placeholder="用户名">
+    <button id="connectButton">进入聊天室</button>
 </div>
 
-<div id="chat-page" class="hidden">
-    <div class="chat-container">
-        <div class="chat-header">
-            <h2>Spring WebSocket Chat Demo</h2>
+<div class="chat-container d-none" id="chatPage">
+    <div class="list-group online-users-list" id="onlineUsersContainer">
+        <li id="publicChatListItem" class="list-group-item active">
+            <img src="https://ui-avatars.com/api/?name=Public&background=random&color=fff&size=30" alt="Public" class="rounded-circle">
+            <span>公共聊天室</span>
+            <span id="publicChatNotification" class="notification-badge d-none">0</span>
+        </li>
+        <!-- Online users will be listed here dynamically -->
+    </div>
+    <div id="chatWindowsContainer">
+        <div id="publicChatWindow" class="chat-window card">
+            <div class="card-header chat-window-header d-flex align-items-center">
+                <img src="https://ui-avatars.com/api/?name=Public&background=random&color=fff&size=30" alt="Public" class="rounded-circle chat-avatar-header">
+                <h5 class="mb-0 ms-2">公共聊天室</h5>
+            </div>
+            <div id="publicMessageArea" class="card-body messages">
+                <!-- Public messages will be displayed here -->
+            </div>
+            <div class="card-footer message-input-area">
+                <input type="text" id="publicMessageInput" class="form-control" placeholder="输入公共消息...">
+                <button id="publicSendButton" class="btn btn-primary ms-2">发送</button>
+            </div>
         </div>
-        <div class="connecting">
-            Connecting...
-        </div>
-        <ul id="messageArea">
 
-        </ul>
-        <form id="messageForm" name="messageForm">
-            <div class="form-group">
-                <div class="input-group clearfix">
-                    <input type="text" id="message" placeholder="Type a message..." autocomplete="off" class="form-control"/>
-                    <button type="submit" class="primary">Send</button>
+        <template id="privateChatWindowTemplate">
+            <div class="chat-window card d-none">
+                <div class="card-header chat-window-header d-flex align-items-center position-relative">
+                    <img src="" alt="" class="rounded-circle chat-avatar-header">
+                    <h5 class="mb-0 ms-2 private-chat-username"></h5>
+                    <!-- Close button will be added by JS -->
+                </div>
+                <div class="card-body messages private-message-area">
+                    <!-- Private messages will be displayed here -->
+                </div>
+                <div class="card-footer message-input-area">
+                    <input type="text" class="form-control private-message-input" placeholder="输入私聊消息...">
+                    <button class="btn btn-primary ms-2 private-send-button">发送</button>
                 </div>
             </div>
-        </form>
+        </template>
     </div>
 </div>
 
-<script src="https://cdn.bootcss.com/sockjs-client/1.1.4/sockjs.min.js"></script>
-<script src="https://cdn.bootcss.com/stomp.js/2.3.3/stomp.min.js"></script>
-<script src="/js/main.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="/app.js"></script>
 </body>
 </html>
